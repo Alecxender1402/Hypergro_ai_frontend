@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
@@ -38,7 +37,7 @@ const PropertyList = () => {
 
       // Apply filters
       if (filters.propertyType) {
-        query = query.eq('property_type', filters.propertyType);
+        query = query.eq('property_type', filters.propertyType as any);
       }
       if (filters.minPrice) {
         query = query.gte('price', parseFloat(filters.minPrice));
