@@ -36,7 +36,7 @@ const PropertyList = () => {
         .eq('status', 'available');
 
       // Apply filters
-      if (filters.propertyType) {
+      if (filters.propertyType && filters.propertyType !== 'all') {
         query = query.eq('property_type', filters.propertyType as any);
       }
       if (filters.minPrice) {
@@ -45,10 +45,10 @@ const PropertyList = () => {
       if (filters.maxPrice) {
         query = query.lte('price', parseFloat(filters.maxPrice));
       }
-      if (filters.bedrooms) {
+      if (filters.bedrooms && filters.bedrooms !== 'all') {
         query = query.gte('bedrooms', parseInt(filters.bedrooms));
       }
-      if (filters.bathrooms) {
+      if (filters.bathrooms && filters.bathrooms !== 'all') {
         query = query.gte('bathrooms', parseInt(filters.bathrooms));
       }
       if (filters.city) {

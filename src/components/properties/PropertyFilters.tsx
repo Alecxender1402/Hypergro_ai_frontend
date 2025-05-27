@@ -49,13 +49,13 @@ const PropertyFiltersComponent = ({
           <Label htmlFor="propertyType">Property Type</Label>
           <Select 
             value={filters.propertyType} 
-            onValueChange={(value) => updateFilter('propertyType', value)}
+            onValueChange={(value) => updateFilter('propertyType', value === 'all' ? '' : value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Any type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Any type</SelectItem>
+              <SelectItem value="all">Any type</SelectItem>
               <SelectItem value="apartment">Apartment</SelectItem>
               <SelectItem value="house">House</SelectItem>
               <SelectItem value="condo">Condo</SelectItem>
@@ -94,13 +94,13 @@ const PropertyFiltersComponent = ({
             <Label htmlFor="bedrooms">Bedrooms</Label>
             <Select 
               value={filters.bedrooms} 
-              onValueChange={(value) => updateFilter('bedrooms', value)}
+              onValueChange={(value) => updateFilter('bedrooms', value === 'all' ? '' : value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Any" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Any</SelectItem>
+                <SelectItem value="all">Any</SelectItem>
                 <SelectItem value="0">Studio</SelectItem>
                 <SelectItem value="1">1+</SelectItem>
                 <SelectItem value="2">2+</SelectItem>
@@ -113,13 +113,13 @@ const PropertyFiltersComponent = ({
             <Label htmlFor="bathrooms">Bathrooms</Label>
             <Select 
               value={filters.bathrooms} 
-              onValueChange={(value) => updateFilter('bathrooms', value)}
+              onValueChange={(value) => updateFilter('bathrooms', value === 'all' ? '' : value)}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Any" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Any</SelectItem>
+                <SelectItem value="all">Any</SelectItem>
                 <SelectItem value="1">1+</SelectItem>
                 <SelectItem value="2">2+</SelectItem>
                 <SelectItem value="3">3+</SelectItem>
