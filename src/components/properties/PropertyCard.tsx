@@ -1,47 +1,63 @@
-
-import React from 'react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Heart, MapPin, Bed, Bath, Square } from 'lucide-react';
-import { Tables } from '@/integrations/supabase/types';
-
-type Property = Tables<'properties'>;
+import React from "react";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Heart, MapPin, Bed, Bath, Square } from "lucide-react";
+import { Property } from "@/services/api";
 
 interface PropertyCardProps {
   property: Property;
   isFavorite?: boolean;
-  onToggleFavorite?: (propertyId: string) => void;
+  showDeleteButton?: boolean;
+  onDelete?: () => void;
+  showEditButton?: boolean;
+  onEdit?: () => void;
+  onToggleFavorite?: (propertyId: string, isCurrentlyFavorite: boolean) => void;
   onViewDetails?: (property: Property) => void;
+  showRemoveButton?: boolean;
+  onRemoveFavorite?: (propertyId: string) => void;
 }
 
-const PropertyCard = ({ 
-  property, 
-  isFavorite = false, 
-  onToggleFavorite, 
-  onViewDetails 
+const PropertyCard = ({
+  property,
+  isFavorite = false,
+  onToggleFavorite,
+  onViewDetails,
+  showDeleteButton = false,
+  onDelete,
+  showEditButton = false,
+  onEdit,
+  showRemoveButton = false,
+  onRemoveFavorite,
 }: PropertyCardProps) => {
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(price);
-  };
-
   return (
     <Card className="w-full max-w-sm hover:shadow-lg transition-shadow">
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
-          <CardTitle className="text-lg line-clamp-2">{property.title}</CardTitle>
+          <CardTitle className="text-lg line-clamp-2">
+            {property.title}
+          </CardTitle>
           {onToggleFavorite && (
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => onToggleFavorite(property.id)}
+              onClick={() => onToggleFavorite(property._id, isFavorite)}
               className="p-1"
+              aria-label={
+                isFavorite ? "Remove from favorites" : "Add to favorites"
+              }
             >
-              <Heart 
-                className={`h-5 w-5 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} 
+              <Heart
+                className={`h-5 w-5 transition-colors ${
+                  isFavorite ? "fill-red-500 text-red-500" : "text-gray-400"
+                }`}
+                aria-hidden="true"
               />
             </Button>
           )}
@@ -53,7 +69,10 @@ const PropertyCard = ({
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="text-2xl font-bold text-primary">
-          {formatPrice(property.price)}/month
+          {new Intl.NumberFormat("en-IN", {
+            style: "currency",
+            currency: "INR",
+          }).format(property.price)}
         </div>
         <div className="flex gap-4 text-sm text-gray-600">
           <div className="flex items-center">
@@ -64,38 +83,69 @@ const PropertyCard = ({
             <Bath className="h-4 w-4 mr-1" />
             {property.bathrooms} bath
           </div>
-          {property.square_feet && (
+          {property.areaSqFt && (
             <div className="flex items-center">
               <Square className="h-4 w-4 mr-1" />
-              {property.square_feet} sq ft
+              {property.areaSqFt} sq ft
             </div>
           )}
         </div>
         <div className="flex flex-wrap gap-1">
           <Badge variant="secondary" className="text-xs">
-            {property.property_type}
+            {property.type}
           </Badge>
-          <Badge 
-            variant={property.status === 'available' ? 'default' : 'secondary'}
+          <Badge
+            variant={property.isVerified ? "default" : "secondary"}
             className="text-xs"
           >
-            {property.status}
+            {property.isVerified ? "Verified" : "Unverified"}
           </Badge>
         </div>
-        {property.description && (
-          <p className="text-sm text-gray-600 line-clamp-2">
-            {property.description}
-          </p>
+        {property.tags && property.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1">
+            {property.tags.slice(0, 2).map((tag, index) => (
+              <Badge key={index} variant="outline" className="text-xs">
+                {tag}
+              </Badge>
+            ))}
+          </div>
         )}
       </CardContent>
       <CardFooter>
-        <Button 
-          variant="outline" 
-          className="w-full"
-          onClick={() => onViewDetails && onViewDetails(property)}
-        >
-          View Details
-        </Button>
+        <div className="flex flex-col gap-2 w-full">
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={() => onViewDetails && onViewDetails(property)}
+          >
+            View Details
+          </Button>
+          {showEditButton && onEdit && (
+            <Button
+              className="w-full bg-blue-600 text-white hover:bg-blue-800"
+              onClick={onEdit}
+            >
+              Edit Property
+            </Button>
+          )}
+          {showDeleteButton && onDelete && (
+            <Button
+              className="w-full bg-black text-white hover:bg-gray-900"
+              onClick={onDelete}
+            >
+              Delete Property
+            </Button>
+          )}
+          {showRemoveButton && onRemoveFavorite && (
+            <Button
+              variant="destructive"
+              className="w-full bg-black text-white hover:bg-gray-900"
+              onClick={() => onRemoveFavorite(property._id)}
+            >
+              Remove from Favorites
+            </Button>
+          )}
+        </div>
       </CardFooter>
     </Card>
   );

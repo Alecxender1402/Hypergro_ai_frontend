@@ -1,18 +1,14 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { supabase } from '@/integrations/supabase/client';
-import { Tables } from '@/integrations/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-
-type Profile = Tables<'profiles'>;
+import { getUserProfile, updateUserProfile, UserProfile as IUserProfile } from '@/services/api';
 
 const UserProfile = () => {
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile] = useState<IUserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
@@ -20,20 +16,12 @@ const UserProfile = () => {
     email: '',
     phone: '',
   });
-  const { user } = useAuth();
   const { toast } = useToast();
 
   const fetchProfile = async () => {
-    if (!user) return;
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single();
-      
-      if (error) throw error;
+      const data = await getUserProfile();
       setProfile(data);
       setFormData({
         full_name: data.full_name || '',
@@ -43,7 +31,7 @@ const UserProfile = () => {
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message,
+        description: error.response?.data?.message || error.message,
         variant: "destructive",
       });
     } finally {
@@ -51,34 +39,24 @@ const UserProfile = () => {
     }
   };
 
-  const updateProfile = async (e: React.FormEvent) => {
+  const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
-    
     setSaving(true);
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          full_name: formData.full_name,
-          email: formData.email,
-          phone: formData.phone,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', user.id);
-      
-      if (error) throw error;
-      
+      const updated = await updateUserProfile({
+        full_name: formData.full_name,
+        email: formData.email,
+        phone: formData.phone,
+      });
+      setProfile(updated);
       toast({
         title: "Profile updated",
         description: "Your profile has been successfully updated.",
       });
-      
-      fetchProfile();
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message,
+        description: error.response?.data?.message || error.message,
         variant: "destructive",
       });
     } finally {
@@ -88,7 +66,7 @@ const UserProfile = () => {
 
   useEffect(() => {
     fetchProfile();
-  }, [user]);
+  }, []);
 
   if (loading) {
     return (
@@ -105,7 +83,7 @@ const UserProfile = () => {
           <CardTitle>Your Profile</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={updateProfile} className="space-y-4">
+          <form onSubmit={handleUpdateProfile} className="space-y-4">
             <div>
               <Label htmlFor="full_name">Full Name</Label>
               <Input
@@ -116,7 +94,6 @@ const UserProfile = () => {
                 placeholder="Enter your full name"
               />
             </div>
-            
             <div>
               <Label htmlFor="email">Email</Label>
               <Input
@@ -127,7 +104,6 @@ const UserProfile = () => {
                 placeholder="Enter your email"
               />
             </div>
-            
             <div>
               <Label htmlFor="phone">Phone</Label>
               <Input
@@ -138,18 +114,16 @@ const UserProfile = () => {
                 placeholder="Enter your phone number"
               />
             </div>
-            
             <Button type="submit" disabled={saving} className="w-full">
               {saving ? 'Saving...' : 'Update Profile'}
             </Button>
           </form>
-          
           {profile && (
             <div className="mt-6 pt-6 border-t">
               <h3 className="text-sm font-medium text-gray-500 mb-2">Account Information</h3>
               <div className="text-sm text-gray-600">
-                <p>Member since: {new Date(profile.created_at || '').toLocaleDateString()}</p>
-                <p>Last updated: {new Date(profile.updated_at || '').toLocaleDateString()}</p>
+                <p>Member since: {new Date(profile.createdAt).toLocaleDateString()}</p>
+                <p>Last updated: {new Date(profile.updatedAt).toLocaleDateString()}</p>
               </div>
             </div>
           )}

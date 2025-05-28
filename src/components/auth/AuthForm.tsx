@@ -1,11 +1,11 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { supabase } from '@/integrations/supabase/client';
+import { authAPI } from '@/services/api';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 interface AuthFormProps {
   onAuthSuccess: () => void;
@@ -15,9 +15,9 @@ const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { setUser } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,36 +25,30 @@ const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
 
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              full_name: fullName,
-            },
-          },
-        });
-        if (error) throw error;
+        // Registration
+        await authAPI.register(email, password);
         toast({
           title: "Account created!",
-          description: "Please check your email to verify your account.",
+          description: "Your account has been created successfully. Please log in.",
         });
+        setIsSignUp(false); // Switch to login form
+        setEmail('');
+        setPassword('');
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) throw error;
-        onAuthSuccess();
+        // Login
+        const response = await authAPI.login(email, password);
+        localStorage.setItem('token', response.token);
+        setUser(response.data.user);
         toast({
           title: "Welcome back!",
           description: "You have successfully signed in.",
         });
+        onAuthSuccess();
       }
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.message,
+        description: error.response?.data?.message || error.message || "An error occurred",
         variant: "destructive",
       });
     } finally {
@@ -75,18 +69,6 @@ const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {isSignUp && (
-            <div>
-              <Label htmlFor="fullName">Full Name</Label>
-              <Input
-                id="fullName"
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-              />
-            </div>
-          )}
           <div>
             <Label htmlFor="email">Email</Label>
             <Input
@@ -105,6 +87,7 @@ const AuthForm = ({ onAuthSuccess }: AuthFormProps) => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              minLength={6}
             />
           </div>
           <Button type="submit" className="w-full" disabled={loading}>

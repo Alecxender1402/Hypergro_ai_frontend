@@ -1,172 +1,328 @@
-
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Button } from '@/components/ui/button';
+import React from "react";
 
 export interface PropertyFilters {
-  propertyType: string;
+  state: string;
+  city: string;
   minPrice: string;
   maxPrice: string;
+  minAreaSqFt: string;
+  maxAreaSqFt: string;
   bedrooms: string;
   bathrooms: string;
-  city: string;
-  petFriendly: boolean;
-  parkingAvailable: boolean;
-  furnished: boolean;
+  amenities: string[];
+  furnished: string;
+  availableFrom: string;
+  minRating: string;
+  maxRating: string;
+  isVerified: string;
+  listingType: string;
+  propertyType: string;
 }
 
-interface PropertyFiltersProps {
+interface Props {
   filters: PropertyFilters;
   onFiltersChange: (filters: PropertyFilters) => void;
   onClearFilters: () => void;
 }
 
-const PropertyFiltersComponent = ({ 
-  filters, 
-  onFiltersChange, 
-  onClearFilters 
-}: PropertyFiltersProps) => {
-  const updateFilter = (key: keyof PropertyFilters, value: any) => {
+// 28 Indian states
+const STATES = [
+  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
+  "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
+  "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram",
+  "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu",
+  "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"
+];
+
+// Example city list (expand as needed)
+const CITIES = [
+  "Mumbai", "Delhi", "Bengaluru", "Hyderabad", "Ahmedabad", "Chennai", "Kolkata",
+  "Pune", "Jaipur", "Lucknow", "Kanpur", "Nagpur", "Indore", "Thane", "Bhopal"
+];
+
+// Amenity options
+const AMENITIES = [
+  "lift", "gym", "garden", "pool", "security", "clubhouse", "power-backup", "wifi"
+];
+
+const FURNISHED_OPTIONS = [
+  { value: "", label: "Any" },
+  { value: "semi", label: "Semi" },
+  { value: "full", label: "Full" },
+  { value: "un", label: "Unfurnished" }
+];
+
+const PROPERTY_TYPES = [
+  "", "apartment", "house", "condo", "townhouse", "studio", "loft"
+];
+
+const LISTING_TYPES = [
+  { value: "", label: "Any" },
+  { value: "rent", label: "Rent" },
+  { value: "sale", label: "Sale" }
+];
+
+const VERIFIED_OPTIONS = [
+  { value: "", label: "Any" },
+  { value: "true", label: "Verified" },
+  { value: "false", label: "Unverified" }
+];
+
+const BEDROOMS = ["", "1", "2", "3", "4", "5+"];
+const BATHROOMS = ["", "1", "2", "3", "4", "5+"];
+
+const RATINGS = Array.from({ length: 10 }, (_, i) => String(i + 1));
+
+const PropertyFiltersComponent: React.FC<Props> = ({
+  filters,
+  onFiltersChange,
+  onClearFilters
+}) => {
+  const update = (key: keyof PropertyFilters, value: any) => {
     onFiltersChange({ ...filters, [key]: value });
   };
 
+  const toggleAmenity = (amenity: string) => {
+    if (filters.amenities.includes(amenity)) {
+      update("amenities", filters.amenities.filter(a => a !== amenity));
+    } else {
+      update("amenities", [...filters.amenities, amenity]);
+    }
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <CardTitle>Filters</CardTitle>
-          <Button variant="outline" size="sm" onClick={onClearFilters}>
-            Clear All
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div>
-          <Label htmlFor="propertyType">Property Type</Label>
-          <Select 
-            value={filters.propertyType} 
-            onValueChange={(value) => updateFilter('propertyType', value === 'all' ? '' : value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Any type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Any type</SelectItem>
-              <SelectItem value="apartment">Apartment</SelectItem>
-              <SelectItem value="house">House</SelectItem>
-              <SelectItem value="condo">Condo</SelectItem>
-              <SelectItem value="townhouse">Townhouse</SelectItem>
-              <SelectItem value="studio">Studio</SelectItem>
-              <SelectItem value="loft">Loft</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+    <div className="bg-white rounded shadow p-4 space-y-4">
+      <div className="flex justify-between items-center">
+        <h3 className="font-bold text-lg">Filters</h3>
+        <button
+          className="text-blue-600 text-sm underline"
+          onClick={onClearFilters}
+          type="button"
+        >
+          Clear All
+        </button>
+      </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <Label htmlFor="minPrice">Min Price</Label>
-            <Input
-              id="minPrice"
-              type="number"
-              placeholder="$0"
-              value={filters.minPrice}
-              onChange={(e) => updateFilter('minPrice', e.target.value)}
-            />
-          </div>
-          <div>
-            <Label htmlFor="maxPrice">Max Price</Label>
-            <Input
-              id="maxPrice"
-              type="number"
-              placeholder="No limit"
-              value={filters.maxPrice}
-              onChange={(e) => updateFilter('maxPrice', e.target.value)}
-            />
-          </div>
-        </div>
+      {/* State */}
+      <div>
+        <label className="block font-medium mb-1">State</label>
+        <select
+          className="w-full border rounded px-2 py-1"
+          value={filters.state}
+          onChange={e => update("state", e.target.value)}
+        >
+          <option value="">All States</option>
+          {STATES.map(state => (
+            <option key={state} value={state}>{state}</option>
+          ))}
+        </select>
+      </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <div>
-            <Label htmlFor="bedrooms">Bedrooms</Label>
-            <Select 
-              value={filters.bedrooms} 
-              onValueChange={(value) => updateFilter('bedrooms', value === 'all' ? '' : value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Any" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Any</SelectItem>
-                <SelectItem value="0">Studio</SelectItem>
-                <SelectItem value="1">1+</SelectItem>
-                <SelectItem value="2">2+</SelectItem>
-                <SelectItem value="3">3+</SelectItem>
-                <SelectItem value="4">4+</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label htmlFor="bathrooms">Bathrooms</Label>
-            <Select 
-              value={filters.bathrooms} 
-              onValueChange={(value) => updateFilter('bathrooms', value === 'all' ? '' : value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Any" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Any</SelectItem>
-                <SelectItem value="1">1+</SelectItem>
-                <SelectItem value="2">2+</SelectItem>
-                <SelectItem value="3">3+</SelectItem>
-                <SelectItem value="4">4+</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+      {/* City */}
+      <div>
+        <label className="block font-medium mb-1">City</label>
+        <select
+          className="w-full border rounded px-2 py-1"
+          value={filters.city}
+          onChange={e => update("city", e.target.value)}
+        >
+          <option value="">All Cities</option>
+          {CITIES.map(city => (
+            <option key={city} value={city}>{city}</option>
+          ))}
+        </select>
+      </div>
 
-        <div>
-          <Label htmlFor="city">City</Label>
-          <Input
-            id="city"
-            placeholder="Enter city name"
-            value={filters.city}
-            onChange={(e) => updateFilter('city', e.target.value)}
+      {/* Price */}
+      <div className="flex gap-2">
+        <div className="flex-1">
+          <label className="block font-medium mb-1">Min Price</label>
+          <input
+            type="number"
+            className="w-full border rounded px-2 py-1"
+            value={filters.minPrice}
+            onChange={e => update("minPrice", e.target.value)}
+            placeholder="₹ Min"
           />
         </div>
-
-        <div className="space-y-3">
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="petFriendly"
-              checked={filters.petFriendly}
-              onCheckedChange={(checked) => updateFilter('petFriendly', checked)}
-            />
-            <Label htmlFor="petFriendly" className="text-sm">Pet Friendly</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="parkingAvailable"
-              checked={filters.parkingAvailable}
-              onCheckedChange={(checked) => updateFilter('parkingAvailable', checked)}
-            />
-            <Label htmlFor="parkingAvailable" className="text-sm">Parking Available</Label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="furnished"
-              checked={filters.furnished}
-              onCheckedChange={(checked) => updateFilter('furnished', checked)}
-            />
-            <Label htmlFor="furnished" className="text-sm">Furnished</Label>
-          </div>
+        <div className="flex-1">
+          <label className="block font-medium mb-1">Max Price</label>
+          <input
+            type="number"
+            className="w-full border rounded px-2 py-1"
+            value={filters.maxPrice}
+            onChange={e => update("maxPrice", e.target.value)}
+            placeholder="₹ Max"
+          />
         </div>
-      </CardContent>
-    </Card>
+      </div>
+
+      {/* Area Sq Ft */}
+      <div className="flex gap-2">
+        <div className="flex-1">
+          <label className="block font-medium mb-1">Min Area (sq ft)</label>
+          <input
+            type="number"
+            className="w-full border rounded px-2 py-1"
+            value={filters.minAreaSqFt}
+            onChange={e => update("minAreaSqFt", e.target.value)}
+            placeholder="Min"
+          />
+        </div>
+        <div className="flex-1">
+          <label className="block font-medium mb-1">Max Area (sq ft)</label>
+          <input
+            type="number"
+            className="w-full border rounded px-2 py-1"
+            value={filters.maxAreaSqFt}
+            onChange={e => update("maxAreaSqFt", e.target.value)}
+            placeholder="Max"
+          />
+        </div>
+      </div>
+
+      {/* Bedrooms/Bathrooms */}
+      <div className="flex gap-2">
+        <div className="flex-1">
+          <label className="block font-medium mb-1">Bedrooms</label>
+          <select
+            className="w-full border rounded px-2 py-1"
+            value={filters.bedrooms}
+            onChange={e => update("bedrooms", e.target.value)}
+          >
+            {BEDROOMS.map(b => (
+              <option key={b} value={b}>{b === "" ? "Any" : b}</option>
+            ))}
+          </select>
+        </div>
+        <div className="flex-1">
+          <label className="block font-medium mb-1">Bathrooms</label>
+          <select
+            className="w-full border rounded px-2 py-1"
+            value={filters.bathrooms}
+            onChange={e => update("bathrooms", e.target.value)}
+          >
+            {BATHROOMS.map(b => (
+              <option key={b} value={b}>{b === "" ? "Any" : b}</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Amenities */}
+      <div>
+        <label className="block font-medium mb-1">Amenities</label>
+        <div className="flex flex-wrap gap-2">
+          {AMENITIES.map(amenity => (
+            <label key={amenity} className="flex items-center gap-1">
+              <input
+                type="checkbox"
+                checked={filters.amenities.includes(amenity)}
+                onChange={() => toggleAmenity(amenity)}
+              />
+              <span className="capitalize">{amenity}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+
+      {/* Furnished */}
+      <div>
+        <label className="block font-medium mb-1">Furnished</label>
+        <select
+          className="w-full border rounded px-2 py-1"
+          value={filters.furnished}
+          onChange={e => update("furnished", e.target.value)}
+        >
+          {FURNISHED_OPTIONS.map(opt => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Available From */}
+      <div>
+        <label className="block font-medium mb-1">Available From</label>
+        <input
+          type="date"
+          className="w-full border rounded px-2 py-1"
+          value={filters.availableFrom}
+          onChange={e => update("availableFrom", e.target.value)}
+        />
+      </div>
+
+      {/* Rating */}
+      <div className="flex gap-2">
+        <div className="flex-1">
+          <label className="block font-medium mb-1">Min Rating</label>
+          <select
+            className="w-full border rounded px-2 py-1"
+            value={filters.minRating}
+            onChange={e => update("minRating", e.target.value)}
+          >
+            <option value="">Any</option>
+            {RATINGS.map(r => <option key={r} value={r}>{r}</option>)}
+          </select>
+        </div>
+        <div className="flex-1">
+          <label className="block font-medium mb-1">Max Rating</label>
+          <select
+            className="w-full border rounded px-2 py-1"
+            value={filters.maxRating}
+            onChange={e => update("maxRating", e.target.value)}
+          >
+            <option value="">Any</option>
+            {RATINGS.map(r => <option key={r} value={r}>{r}</option>)}
+          </select>
+        </div>
+      </div>
+
+      {/* Verified */}
+      <div>
+        <label className="block font-medium mb-1">Verified</label>
+        <select
+          className="w-full border rounded px-2 py-1"
+          value={filters.isVerified}
+          onChange={e => update("isVerified", e.target.value)}
+        >
+          {VERIFIED_OPTIONS.map(opt => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Listing Type */}
+      <div>
+        <label className="block font-medium mb-1">Listing Type</label>
+        <select
+          className="w-full border rounded px-2 py-1"
+          value={filters.listingType}
+          onChange={e => update("listingType", e.target.value)}
+        >
+          {LISTING_TYPES.map(opt => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Property Type */}
+      <div>
+        <label className="block font-medium mb-1">Property Type</label>
+        <select
+          className="w-full border rounded px-2 py-1"
+          value={filters.propertyType}
+          onChange={e => update("propertyType", e.target.value)}
+        >
+          <option value="">Any</option>
+          <option value="apartment">Apartment</option>
+          <option value="house">House</option>
+          <option value="condo">Condo</option>
+          <option value="townhouse">Townhouse</option>
+          <option value="studio">Studio</option>
+          <option value="loft">Loft</option>
+        </select>
+      </div>
+    </div>
   );
 };
 

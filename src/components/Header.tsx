@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { LogOut, User, Heart, Home } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface HeaderProps {
   currentView: 'properties' | 'favorites' | 'profile';
@@ -11,6 +11,12 @@ interface HeaderProps {
 
 const Header = ({ currentView, onViewChange }: HeaderProps) => {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSignOut = () => {
+    signOut();
+    navigate('/login');
+  };
 
   return (
     <header className="bg-white shadow-sm border-b">
@@ -45,11 +51,11 @@ const Header = ({ currentView, onViewChange }: HeaderProps) => {
                 size="sm"
               >
                 <User className="h-4 w-4 mr-2" />
-                Profile
+                Recommdation
               </Button>
               <Button
                 variant="outline"
-                onClick={signOut}
+                onClick={handleSignOut}
                 size="sm"
               >
                 <LogOut className="h-4 w-4 mr-2" />
