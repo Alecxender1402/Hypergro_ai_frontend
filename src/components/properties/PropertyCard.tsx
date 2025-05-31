@@ -132,14 +132,15 @@ const PropertyCard = ({
               Edit Property
             </Button>
           )}
-          {showDeleteButton && onDelete && (
-            <Button
-              className="w-full bg-black text-white hover:bg-gray-900"
-              onClick={onDelete}
-            >
-              Delete Property
-            </Button>
-          )}
+          {isOwner && onDelete && (
+   <Button
+    className="w-full bg-black text-white hover:bg-gray-900"
+    onClick={onDelete}
+   >
+    Delete Property
+    </Button>
+  )}
+
           {showRemoveButton && onRemoveFavorite && (
             <Button
               className="w-full bg-black text-white hover:bg-gray-900"
