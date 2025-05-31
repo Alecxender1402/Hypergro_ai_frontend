@@ -191,28 +191,23 @@ const PropertyList = () => {
       });
     }
   };
-    
 
   const handleDeleteProperty = async (propertyId: string) => {
-    try {
-      await propertyAPI.deleteProperty(propertyId);
-      toast({
-        title: "Property deleted",
-        description: "Property has been deleted successfully.",
-      });
-
-      // Refresh property list
-      const res = await propertyAPI.getProperties({ ...filters, page, limit: PAGE_SIZE });
-      setProperties(res.data);
-      setTotal(res.total);
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.response?.data?.message || error.message,
-        variant: "destructive",
-      });
-    }
-  };
+  try {
+    await propertyAPI.deleteProperty(propertyId); // API call to backend
+    setProperties(prev => prev.filter(p => p._id !== propertyId)); // Remove from UI
+    toast({
+      title: "Deleted",
+      description: "Property deleted successfully.",
+    });
+  } catch (error: any) {
+    toast({
+      title: "Error",
+      description: error.response?.data?.error || error.message,
+      variant: "destructive",
+    });
+  }
+};
 
   return (
     <div className="container mx-auto px-4 py-8">
