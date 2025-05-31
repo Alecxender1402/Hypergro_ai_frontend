@@ -15,7 +15,7 @@ const Header = ({ currentView, onViewChange }: HeaderProps) => {
 
   const handleSignOut = () => {
     signOut();
-    navigate('/login');
+    navigate('/auth');
   };
 
   return (

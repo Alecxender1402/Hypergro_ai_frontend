@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Card,
   CardContent,
@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Heart, MapPin, Bed, Bath, Square } from "lucide-react";
+import RecommendPropertyModal from "../recommend/RecommendPropertyModal";
 import { Property } from "@/services/api";
 
 interface PropertyCardProps {
@@ -16,6 +17,7 @@ interface PropertyCardProps {
   isFavorite?: boolean;
   showDeleteButton?: boolean;
   onDelete?: () => void;
+  isOwner?: boolean;
   showEditButton?: boolean;
   onEdit?: () => void;
   onToggleFavorite?: (propertyId: string, isCurrentlyFavorite: boolean) => void;
@@ -31,11 +33,14 @@ const PropertyCard = ({
   onViewDetails,
   showDeleteButton = false,
   onDelete,
+  isOwner = false,
   showEditButton = false,
   onEdit,
   showRemoveButton = false,
   onRemoveFavorite,
 }: PropertyCardProps) => {
+  const [isRecommendOpen, setIsRecommendOpen] = useState(false);
+
   return (
     <Card className="w-full max-w-sm hover:shadow-lg transition-shadow">
       <CardHeader className="pb-3">
@@ -114,15 +119,14 @@ const PropertyCard = ({
       <CardFooter>
         <div className="flex flex-col gap-2 w-full">
           <Button
-            variant="outline"
-            className="w-full"
+            className="w-full bg-black text-white hover:bg-gray-900"
             onClick={() => onViewDetails && onViewDetails(property)}
           >
             View Details
           </Button>
-          {showEditButton && onEdit && (
+          {isOwner && onEdit && (
             <Button
-              className="w-full bg-blue-600 text-white hover:bg-blue-800"
+              className="w-full bg-black text-white hover:bg-gray-900"
               onClick={onEdit}
             >
               Edit Property
@@ -138,14 +142,26 @@ const PropertyCard = ({
           )}
           {showRemoveButton && onRemoveFavorite && (
             <Button
-              variant="destructive"
               className="w-full bg-black text-white hover:bg-gray-900"
               onClick={() => onRemoveFavorite(property._id)}
             >
               Remove from Favorites
             </Button>
           )}
+          {/* Recommend Button */}
+          <Button
+            className="w-full bg-black text-white hover:bg-gray-900"
+            onClick={() => setIsRecommendOpen(true)}
+          >
+            Recommend
+          </Button>
         </div>
+        {/* Recommend Modal */}
+        <RecommendPropertyModal
+          propertyId={property._id}
+          isOpen={isRecommendOpen}
+          onClose={() => setIsRecommendOpen(false)}
+        />
       </CardFooter>
     </Card>
   );

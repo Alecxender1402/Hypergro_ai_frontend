@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:3000/api';
+const API_BASE_URL = 'https://hypergro-ai-backend1.onrender.com/api';
 
 // Create axios instance with interceptors for auth
 const api = axios.create({
@@ -112,24 +112,50 @@ export const authAPI = {
 // Property API calls
 export const propertyAPI = {
   getProperties: async (filters: any = {}) => {
-    const params = new URLSearchParams();
+    // Convert filters to proper format for the backend
+    const queryParams: Record<string, any> = {};
     
-    // Convert filters to query parameters
-    if (filters.propertyType) params.append('type', filters.propertyType);
-    if (filters.minPrice) params.append('price[gte]', filters.minPrice);
-    if (filters.maxPrice) params.append('price[lte]', filters.maxPrice);
-    if (filters.bedrooms) params.append('bedrooms[gte]', filters.bedrooms);
-    if (filters.bathrooms) params.append('bathrooms[gte]', filters.bathrooms);
-    if (filters.city) params.append('search', filters.city);
+    // Location filters
+    if (filters.state) queryParams.state = filters.state;
+    if (filters.city) queryParams.search = filters.city;
     
-    // Add amenities filter for boolean filters
-    const amenities = [];
-    if (filters.petFriendly) amenities.push('Pet Friendly');
-    if (filters.parkingAvailable) amenities.push('Parking');
-    if (filters.furnished === true) params.append('furnished', 'Furnished');
-    if (amenities.length > 0) params.append('amenities', amenities.join(','));
-
-    const response = await api.get<PropertyResponse>(`/properties?${params.toString()}`);
+    // Price filters
+    if (filters.minPrice) queryParams['price[gte]'] = filters.minPrice;
+    if (filters.maxPrice) queryParams['price[lte]'] = filters.maxPrice;
+    
+    // Area filters
+    if (filters.minAreaSqFt) queryParams['areaSqFt[gte]'] = filters.minAreaSqFt;
+    if (filters.maxAreaSqFt) queryParams['areaSqFt[lte]'] = filters.maxAreaSqFt;
+    
+    // Room filters
+    if (filters.bedrooms) queryParams['bedrooms[gte]'] = filters.bedrooms;
+    if (filters.bathrooms) queryParams['bathrooms[gte]'] = filters.bathrooms;
+    
+    // Amenities
+    if (filters.amenities && filters.amenities.length > 0) {
+      queryParams.amenities = filters.amenities.join(',');
+    }
+    
+    // Furnished status
+    if (filters.furnished) queryParams.furnished = filters.furnished;
+    
+    // Date filters
+    if (filters.availableFrom) queryParams['availableFrom[gte]'] = filters.availableFrom;
+    
+    // Rating filters
+    if (filters.minRating) queryParams['rating[gte]'] = filters.minRating;
+    if (filters.maxRating) queryParams['rating[lte]'] = filters.maxRating;
+    
+    // Other filters
+    if (filters.isVerified) queryParams.isVerified = filters.isVerified;
+    if (filters.listingType) queryParams.listingType = filters.listingType;
+    if (filters.propertyType) queryParams.type = filters.propertyType;
+    
+    // Pagination
+    if (filters.page) queryParams.page = filters.page;
+    if (filters.limit) queryParams.limit = filters.limit;
+    
+    const response = await api.get<PropertyResponse>('/properties', { params: queryParams });
     return response.data;
   },
 
@@ -170,6 +196,17 @@ export const favoritesAPI = {
     const response = await api.delete(`/favorites/${favoriteId}`);
     return response.data;
   },
+};
+
+export const recommendationsAPI = {
+  recommendProperty: async (propertyId: string, recipientEmail: string, message?: string) => {
+    const res = await api.post("/recommendations", { propertyId, recipientEmail, message });
+    return res.data;
+  },
+  getReceived: async () => {
+    const res = await api.get("/recommendations/received");
+    return res.data;
+  }
 };
 
 export default api;

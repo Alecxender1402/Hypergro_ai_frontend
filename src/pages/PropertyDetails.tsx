@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { propertyAPI } from '@/services/api';
-import { Button } from '@/components/ui/button';
+import React, { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { propertyAPI } from "@/services/api";
+import { Button } from "@/components/ui/button";
 
 const PropertyDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -10,6 +10,15 @@ const PropertyDetails = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const lastUpdated = localStorage.getItem("lastUpdatedProperty");
+    if (lastUpdated) {
+      const parsed = JSON.parse(lastUpdated);
+      if (parsed._id === id) {
+        setProperty(parsed);
+        setLoading(false);
+        return;
+      }
+    }
     if (id) {
       setLoading(true);
       propertyAPI.getPropertyById(id)
@@ -36,7 +45,7 @@ const PropertyDetails = () => {
         <p className="text-lg text-gray-600 mb-2">{property.city}, {property.state}</p>
         <div className="mb-4">
           <span className="font-semibold">Type:</span> {property.type} <br />
-          <span className="font-semibold">Price:</span> ${property.price} <br />
+          <span className="font-semibold">Price:</span> ₹{property.price} <br />
           <span className="font-semibold">Bedrooms:</span> {property.bedrooms} <br />
           <span className="font-semibold">Bathrooms:</span> {property.bathrooms} <br />
           <span className="font-semibold">Area:</span> {property.areaSqFt} sq ft <br />

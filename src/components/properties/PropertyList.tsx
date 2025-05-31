@@ -11,36 +11,6 @@ import { Button } from "../ui/button";
 
 const PAGE_SIZE = 12;
 
-// Helper to build query string from filters
-const buildFilters = (
-  filters: PropertyFilters,
-  page: number,
-  limit: number
-) => {
-  const params = new URLSearchParams();
-  if (filters.state) params.append("state", filters.state);
-  if (filters.city) params.append("city", filters.city);
-  if (filters.minPrice) params.append("price[gte]", filters.minPrice);
-  if (filters.maxPrice) params.append("price[lte]", filters.maxPrice);
-  if (filters.minAreaSqFt) params.append("areaSqFt[gte]", filters.minAreaSqFt);
-  if (filters.maxAreaSqFt) params.append("areaSqFt[lte]", filters.maxAreaSqFt);
-  if (filters.bedrooms) params.append("bedrooms[gte]", filters.bedrooms);
-  if (filters.bathrooms) params.append("bathrooms[gte]", filters.bathrooms);
-  if (filters.amenities.length)
-    params.append("amenities", filters.amenities.join(","));
-  if (filters.furnished) params.append("furnished", filters.furnished);
-  if (filters.availableFrom)
-    params.append("availableFrom[gte]", filters.availableFrom);
-  if (filters.minRating) params.append("rating[gte]", filters.minRating);
-  if (filters.maxRating) params.append("rating[lte]", filters.maxRating);
-  if (filters.isVerified) params.append("isVerified", filters.isVerified);
-  if (filters.listingType) params.append("listingType", filters.listingType);
-  if (filters.propertyType) params.append("type", filters.propertyType);
-  params.append("page", String(page));
-  params.append("limit", String(limit));
-  return params.toString();
-};
-
 const PropertyList = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [total, setTotal] = useState(0);
@@ -73,11 +43,12 @@ const PropertyList = () => {
   const { toast } = useToast();
   const { user } = useAuth();
 
+  // Fetch properties when filters or page change
   useEffect(() => {
     setLoading(true);
-    const queryString = buildFilters(filters, page, PAGE_SIZE);
+
     propertyAPI
-      .getProperties(queryString)
+      .getProperties({ ...filters, page, limit: PAGE_SIZE })
       .then((res) => {
         setProperties(res.data);
         setTotal(res.total);
@@ -85,13 +56,14 @@ const PropertyList = () => {
       .catch((error) => {
         toast({
           title: "Error",
-          description: error.message,
+          description: error.message || "Failed to fetch properties",
           variant: "destructive",
         });
       })
       .finally(() => setLoading(false));
   }, [filters, page]);
 
+  // Fetch user favorites if logged in
   useEffect(() => {
     if (user) {
       favoritesAPI.getFavorites().then(setFavorites);
@@ -123,68 +95,63 @@ const PropertyList = () => {
   };
 
   const isFavorite = (propertyId: string) =>
-    favorites.some((fav) => fav?.property?._id === propertyId);
+    favorites.some((fav) => fav.property._id === propertyId);
 
-  const toggleFavorite = async (
-    propertyId: string,
-    isCurrentlyFavorite: boolean
-  ) => {
+  const getFavoriteId = (propertyId: string) => {
+    const favorite = favorites.find((fav) => fav.property._id === propertyId);
+    return favorite ? favorite._id : null;
+  };
+
+  const handleToggleFavorite = async (propertyId: string) => {
     if (!user) {
       toast({
-        title: "Authentication required",
-        description: "Please sign in to save favorites",
+        title: "Authentication Required",
+        description: "Please log in to add favorites",
         variant: "destructive",
       });
       return;
     }
+
     try {
-      if (isCurrentlyFavorite) {
-        const fav = favorites.find((fav) => fav.property._id === propertyId);
-        if (fav) {
-          await favoritesAPI.removeFavorite(fav._id);
-          setFavorites(favorites.filter((f) => f.property._id !== propertyId));
+      if (isFavorite(propertyId)) {
+        const favoriteId = getFavoriteId(propertyId);
+        if (favoriteId) {
+          await favoritesAPI.removeFavorite(favoriteId);
+          setFavorites((prev) =>
+            prev.filter((fav) => fav._id !== favoriteId)
+          );
           toast({
-            title: "Removed from favorites",
-            description: "Property removed from your favorites.",
+            title: "Success",
+            description: "Removed from favorites",
           });
         }
       } else {
-        const newFav = await favoritesAPI.addFavorite(propertyId);
-        setFavorites([...favorites, newFav]);
+        const favorite = await favoritesAPI.addFavorite(propertyId);
+        setFavorites((prev) => [...prev, favorite]);
         toast({
-          title: "Added to favorites",
-          description: "Property added to your favorites.",
+          title: "Success",
+          description: "Added to favorites",
         });
       }
     } catch (error: any) {
       toast({
         title: "Error",
-        description: error.response?.data?.error || error.message,
+        description: error.response?.data?.message || error.message,
         variant: "destructive",
       });
     }
   };
 
   const handleAddProperty = async (propertyData: any) => {
-    if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "Please sign in to add properties",
-        variant: "destructive",
-      });
-      return;
-    }
     try {
       await propertyAPI.createProperty(propertyData);
       toast({
         title: "Property added",
-        description: "New property has been added successfully.",
+        description: "Property has been added successfully.",
       });
       setIsAddModalOpen(false);
-      setPage(1); // reset to first page
       // Refresh properties
-      const queryString = buildFilters(filters, 1, PAGE_SIZE);
-      const res = await propertyAPI.getProperties(queryString);
+      const res = await propertyAPI.getProperties({ ...filters, page, limit: PAGE_SIZE });
       setProperties(res.data);
       setTotal(res.total);
     } catch (error: any) {
@@ -195,6 +162,35 @@ const PropertyList = () => {
       });
     }
   };
+
+  const handleUpdateProperty = async (updatedData: any) => {
+    if (!selectedProperty) return;
+    try {
+      // 1. Update in DB (API)
+      const updated = await propertyAPI.updateProperty(selectedProperty._id, updatedData);
+      toast({
+        title: "Property updated",
+        description: "Property updated successfully.",
+      });
+      setIsEditModalOpen(false);
+      setSelectedProperty(null);
+  
+      // 2. Refresh property list from backend (best for consistency)
+      const res = await propertyAPI.getProperties({ ...filters, page, limit: PAGE_SIZE });
+      setProperties(res.data);
+      setTotal(res.total);
+  
+      // 3. Optionally, persist last updated property for details page (see below)
+      localStorage.setItem("lastUpdatedProperty", JSON.stringify(updated));
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.response?.data?.message || error.message,
+        variant: "destructive",
+      });
+    }
+  };
+    
 
   const handleDeleteProperty = async (propertyId: string) => {
     try {
@@ -203,9 +199,9 @@ const PropertyList = () => {
         title: "Property deleted",
         description: "Property has been deleted successfully.",
       });
+
       // Refresh property list
-      const queryString = buildFilters(filters, page, PAGE_SIZE);
-      const res = await propertyAPI.getProperties(queryString);
+      const res = await propertyAPI.getProperties({ ...filters, page, limit: PAGE_SIZE });
       setProperties(res.data);
       setTotal(res.total);
     } catch (error: any) {
@@ -216,37 +212,6 @@ const PropertyList = () => {
       });
     }
   };
-
-  // ---- EDIT/UPDATE SUPPORT ----
-  const handleEdit = (property: Property) => {
-    setSelectedProperty(property);
-    setIsEditModalOpen(true);
-  };
-
-  const handleUpdateProperty = async (updatedData: any) => {
-    if (!selectedProperty) return;
-    try {
-      await propertyAPI.updateProperty(selectedProperty._id, updatedData);
-      toast({
-        title: "Property updated",
-        description: "Property updated successfully.",
-      });
-      setIsEditModalOpen(false);
-      setSelectedProperty(null);
-      // Refresh property list
-      const queryString = buildFilters(filters, page, PAGE_SIZE);
-      const res = await propertyAPI.getProperties(queryString);
-      setProperties(res.data);
-      setTotal(res.total);
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.response?.data?.message || error.message,
-        variant: "destructive",
-      });
-    }
-  };
-  // ---- END EDIT/UPDATE SUPPORT ----
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -271,32 +236,40 @@ const PropertyList = () => {
         </div>
         <div className="lg:col-span-3">
           {loading ? (
-            <div className="text-center py-8">Loading properties...</div>
-          ) : properties.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              No properties found.
+            <div className="flex justify-center items-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {properties.map((property) => {
-                  const isOwner = user && property.createdBy === user.id;
-                  return (
-                    <PropertyCard
-                      key={property._id}
-                      property={property}
-                      isFavorite={isFavorite(property._id)}
-                      onToggleFavorite={toggleFavorite}
-                      onViewDetails={() =>
-                        (window.location.href = `/properties/${property._id}`)
-                      }
-                      showDeleteButton={isOwner}
-                      onDelete={() => handleDeleteProperty(property._id)}
-                      showEditButton={isOwner}
-                      onEdit={() => handleEdit(property)}
-                    />
-                  );
-                })}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {properties.map((property) => (
+                  <PropertyCard
+                  key={property._id}
+                  property={property}
+                  isFavorite={isFavorite(property._id)}
+                  onToggleFavorite={() => handleToggleFavorite(property._id)}
+                  onViewDetails={() =>
+                    (window.location.href = `/properties/${property._id}`)
+                  }
+                  onEdit={() => {
+                    setSelectedProperty(property);
+                    setIsEditModalOpen(true);
+                  }}
+                  onDelete={() => handleDeleteProperty(property._id)}
+                  isOwner={user && user.id === property.createdBy}
+                />
+                ))}
+
+                {properties.length === 0 && (
+                  <div className="col-span-full text-center py-10">
+                    <h3 className="text-xl font-semibold text-gray-500">
+                      No properties found
+                    </h3>
+                    <p className="text-gray-400 mt-2">
+                      Try changing your filters or check back later
+                    </p>
+                  </div>
+                )}
               </div>
 
               <Pagination
