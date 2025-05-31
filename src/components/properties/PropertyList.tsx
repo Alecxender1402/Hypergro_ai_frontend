@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import PropertyCard from "./PropertyCard";
 import PropertyFiltersComponent, { PropertyFilters } from "./PropertyFilters";
 import Pagination from "./Pagination";
+import { useNavigate } from "react-router-dom";
 import AddPropertyModal from "./AddPropertyModal";
 import EditPropertyModal from "./EditPropertyModal";
 import { propertyAPI, favoritesAPI, Favorite, Property } from "@/services/api";
@@ -42,7 +43,7 @@ const PropertyList = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
-
+  const navigate = useNavigate();
   // Fetch properties when filters or page change
   useEffect(() => {
     setLoading(true);
@@ -248,9 +249,7 @@ const PropertyList = () => {
                   property={property}
                   isFavorite={isFavorite(property._id)}
                   onToggleFavorite={() => handleToggleFavorite(property._id)}
-                  onViewDetails={() =>
-                    (window.location.href = `/properties/${property._id}`)
-                  }
+                  onViewDetails={() => navigate(`/properties/${property._id}`)}
                   onEdit={() => {
                     setSelectedProperty(property);
                     setIsEditModalOpen(true);
