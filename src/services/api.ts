@@ -31,16 +31,6 @@ export interface UserProfile {
     updatedAt: string;
   }
   
-  export const getUserProfile = async (): Promise<UserProfile> => {
-    const res = await api.get('/users/me');
-    return res.data;
-  };
-  
-  export const updateUserProfile = async (profile: Partial<UserProfile>): Promise<UserProfile> => {
-    const res = await api.put('/users/me', profile);
-    return res.data;
-  };
-
 export interface Property {
   _id: string;
   id?: string;
