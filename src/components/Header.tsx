@@ -1,22 +1,42 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
-import { LogOut, User, Heart, Home } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { LogOut, User, Heart, Home, Users } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { getUserEmoji, getUserName } from '@/lib/userUtils';
 
-interface HeaderProps {
-  currentView: 'properties' | 'favorites' | 'profile';
-  onViewChange: (view: 'properties' | 'favorites' | 'profile') => void;
-}
-
-const Header = ({ currentView, onViewChange }: HeaderProps) => {
+const Header = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSignOut = () => {
     signOut();
     navigate('/auth');
   };
+
+  // Determine current view based on pathname
+  const getCurrentView = () => {
+    const path = location.pathname;
+    if (path === '/favorites') return 'favorites';
+    if (path === '/recommendations') return 'recommendations';
+    if (path === '/profile') return 'profile';
+    return 'properties';
+  };
+
+  const currentView = getCurrentView();
+
+  // Get user-specific emoji and name
+  const userEmoji = user ? getUserEmoji(user.id) : '👤';
+  const userName = user ? getUserName(userEmoji) : 'User';
 
   return (
     <header className="bg-white shadow-sm border-b">
@@ -31,7 +51,7 @@ const Header = ({ currentView, onViewChange }: HeaderProps) => {
             <nav className="flex items-center space-x-4">
               <Button
                 variant={currentView === 'properties' ? 'default' : 'ghost'}
-                onClick={() => onViewChange('properties')}
+                onClick={() => navigate('/')}
                 size="sm"
               >
                 <Home className="h-4 w-4 mr-2" />
@@ -39,28 +59,55 @@ const Header = ({ currentView, onViewChange }: HeaderProps) => {
               </Button>
               <Button
                 variant={currentView === 'favorites' ? 'default' : 'ghost'}
-                onClick={() => onViewChange('favorites')}
+                onClick={() => navigate('/favorites')}
                 size="sm"
               >
                 <Heart className="h-4 w-4 mr-2" />
                 Favorites
               </Button>
               <Button
-                variant={currentView === 'profile' ? 'default' : 'ghost'}
-                onClick={() => onViewChange('profile')}
+                variant={currentView === 'recommendations' ? 'default' : 'ghost'}
+                onClick={() => navigate('/recommendations')}
                 size="sm"
               >
-                <User className="h-4 w-4 mr-2" />
-                Recommdation
+                <Users className="h-4 w-4 mr-2" />
+                Recommendations
               </Button>
-              <Button
-                variant="outline"
-                onClick={handleSignOut}
-                size="sm"
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
-              </Button>
+              
+              {/* User Profile Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant={currentView === 'profile' ? 'default' : 'ghost'}
+                    size="sm"
+                    className="relative h-8 w-8 rounded-full p-0"
+                  >
+                    <span className="text-lg">{userEmoji}</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end" forceMount>
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-medium leading-none">
+                        {userEmoji} {userName}
+                      </p>
+                      <p className="text-xs leading-none text-muted-foreground">
+                        {user?.email}
+                      </p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate('/profile')}>
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </nav>
           )}
         </div>

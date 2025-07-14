@@ -41,6 +41,24 @@ const PropertyCard = ({
 }: PropertyCardProps) => {
   const [isRecommendOpen, setIsRecommendOpen] = useState(false);
 
+  // Handle null property gracefully
+  if (!property) {
+    return (
+      <Card className="w-full max-w-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg text-gray-500">
+            Property not available
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-gray-400">
+            This property is no longer available.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="w-full max-w-sm hover:shadow-lg transition-shadow">
       <CardHeader className="pb-3">

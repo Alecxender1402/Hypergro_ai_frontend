@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { propertyAPI } from "@/services/api";
 import { Button } from "@/components/ui/button";
+import Header from "@/components/Header";
 
 const PropertyDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -28,15 +29,27 @@ const PropertyDetails = () => {
   }, [id]);
 
   if (loading) {
-    return <div className="container mx-auto py-8 text-center">Loading property details...</div>;
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="container mx-auto py-8 text-center">Loading property details...</div>
+      </div>
+    );
   }
 
   if (!property) {
-    return <div className="container mx-auto py-8 text-center">Property not found.</div>;
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="container mx-auto py-8 text-center">Property not found.</div>
+      </div>
+    );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-3xl">
+    <div className="min-h-screen bg-gray-50">
+      <Header />
+      <div className="container mx-auto px-4 py-8 max-w-3xl">
       <Button variant="outline" onClick={() => navigate(-1)} className="mb-4">
         &larr; Back
       </Button>
@@ -58,6 +71,7 @@ const PropertyDetails = () => {
           <span className="font-semibold">Rating:</span> {property.rating} <br />
           <span className="font-semibold">Listing Type:</span> {property.listingType} <br />
         </div>
+      </div>
       </div>
     </div>
   );

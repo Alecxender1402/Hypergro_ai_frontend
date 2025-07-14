@@ -122,7 +122,8 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value, type } = e.target;
+    const checked = (e.target as HTMLInputElement).checked;
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
@@ -197,7 +198,17 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
     e.preventDefault();
     const validationErrors = validate();
     setErrors(validationErrors);
-    if (Object.keys(validationErrors).length) return;
+    
+    if (Object.keys(validationErrors).length) {
+      // Show all errors in a toast
+      const errorMessages = Object.values(validationErrors).filter(Boolean);
+      toast({
+        title: "Validation Error",
+        description: errorMessages.join(', '),
+        variant: "destructive",
+      });
+      return;
+    }
 
     const propertyData = {
       ...formData,
@@ -239,9 +250,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
           onChange={handleChange}
           required
         />
-        {errors.title && (
-          <div className="text-red-500 text-sm">{errors.title}</div>
-        )}
 
         {/* Type */}
         <select
@@ -258,9 +266,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
             </option>
           ))}
         </select>
-        {errors.type && (
-          <div className="text-red-500 text-sm">{errors.type}</div>
-        )}
 
         {/* Price */}
         <Input
@@ -273,9 +278,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
           min={0}
           max={MAX_PRICE}
         />
-        {errors.price && (
-          <div className="text-red-500 text-sm">{errors.price}</div>
-        )}
 
         {/* State */}
         <select
@@ -292,9 +294,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
             </option>
           ))}
         </select>
-        {errors.state && (
-          <div className="text-red-500 text-sm">{errors.state}</div>
-        )}
 
         {/* City */}
         <select
@@ -312,9 +311,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
             </option>
           ))}
         </select>
-        {errors.city && (
-          <div className="text-red-500 text-sm">{errors.city}</div>
-        )}
 
         {/* Area */}
         <Input
@@ -327,9 +323,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
           min={0}
           max={MAX_AREA}
         />
-        {errors.areaSqFt && (
-          <div className="text-red-500 text-sm">{errors.areaSqFt}</div>
-        )}
 
         {/* Bedrooms */}
         <Input
@@ -342,9 +335,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
           min={0}
           max={MAX_BEDROOMS}
         />
-        {errors.bedrooms && (
-          <div className="text-red-500 text-sm">{errors.bedrooms}</div>
-        )}
 
         {/* Bathrooms */}
         <Input
@@ -357,9 +347,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
           min={0}
           max={MAX_BATHROOMS}
         />
-        {errors.bathrooms && (
-          <div className="text-red-500 text-sm">{errors.bathrooms}</div>
-        )}
 
         {/* Amenities */}
         <div>
@@ -376,9 +363,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
               </label>
             ))}
           </div>
-          {errors.amenities && (
-            <div className="text-red-500 text-sm">{errors.amenities}</div>
-          )}
         </div>
 
         {/* Furnished */}
@@ -396,9 +380,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
             </option>
           ))}
         </select>
-        {errors.furnished && (
-          <div className="text-red-500 text-sm">{errors.furnished}</div>
-        )}
 
         {/* Available From */}
         <Input
@@ -409,9 +390,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
           onChange={handleChange}
           required
         />
-        {errors.availableFrom && (
-          <div className="text-red-500 text-sm">{errors.availableFrom}</div>
-        )}
 
         {/* Listed By */}
         <Input
@@ -421,9 +399,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
           onChange={handleChange}
           required
         />
-        {errors.listedBy && (
-          <div className="text-red-500 text-sm">{errors.listedBy}</div>
-        )}
 
         {/* Tags */}
         <div>
@@ -440,9 +415,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
               </label>
             ))}
           </div>
-          {errors.tags && (
-            <div className="text-red-500 text-sm">{errors.tags}</div>
-          )}
         </div>
 
         {/* Rating */}
@@ -456,9 +428,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
           min={0}
           max={MAX_RATING}
         />
-        {errors.rating && (
-          <div className="text-red-500 text-sm">{errors.rating}</div>
-        )}
 
         {/* Verified */}
         <div className="flex items-center gap-2">
@@ -487,9 +456,6 @@ const AddPropertyModal: React.FC<AddPropertyModalProps> = ({
             </option>
           ))}
         </select>
-        {errors.listingType && (
-          <div className="text-red-500 text-sm">{errors.listingType}</div>
-        )}
 
         {/* Buttons */}
         <div className="flex gap-2 mt-4">

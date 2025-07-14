@@ -129,8 +129,8 @@ export const propertyAPI = {
     // Furnished status
     if (filters.furnished) queryParams.furnished = filters.furnished;
     
-    // Date filters
-    if (filters.availableFrom) queryParams['availableFrom[gte]'] = filters.availableFrom;
+    // Date filters - show properties available from before or on the selected date
+    if (filters.availableFrom) queryParams['availableFrom[lte]'] = filters.availableFrom;
     
     // Rating filters
     if (filters.minRating) queryParams['rating[gte]'] = filters.minRating;

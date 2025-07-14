@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import PropertyCard from "./PropertyCard";
 import PropertyFiltersComponent, { PropertyFilters } from "./PropertyFilters";
 import Pagination from "./Pagination";
@@ -8,6 +8,7 @@ import EditPropertyModal from "./EditPropertyModal";
 import { propertyAPI, favoritesAPI, Favorite, Property } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useDebounce } from "@/hooks/useDebounce";
 import { Button } from "../ui/button";
 
 const PAGE_SIZE = 12;
@@ -44,25 +45,38 @@ const PropertyList = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const navigate = useNavigate();
-  // Fetch properties when filters or page change
-  useEffect(() => {
-    setLoading(true);
 
-    propertyAPI
-      .getProperties({ ...filters, page, limit: PAGE_SIZE })
-      .then((res) => {
-        setProperties(res.data);
-        setTotal(res.total);
-      })
-      .catch((error) => {
-        toast({
-          title: "Error",
-          description: error.message || "Failed to fetch properties",
-          variant: "destructive",
-        });
-      })
-      .finally(() => setLoading(false));
-  }, [filters, page]);
+  // Debounce filters to prevent excessive API calls
+  const debouncedFilters = useDebounce(filters, 500); // 500ms delay
+
+  // Fetch properties when debounced filters or page change
+  const fetchProperties = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await propertyAPI.getProperties({ 
+        ...debouncedFilters, 
+        page, 
+        limit: PAGE_SIZE 
+      });
+      setProperties(res.data);
+      setTotal(res.total);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to fetch properties",
+        variant: "destructive",
+      });
+      // Set empty results on error
+      setProperties([]);
+      setTotal(0);
+    } finally {
+      setLoading(false);
+    }
+  }, [debouncedFilters, page, toast]);
+
+  useEffect(() => {
+    fetchProperties();
+  }, [fetchProperties]);
 
   // Fetch user favorites if logged in
   useEffect(() => {
@@ -73,7 +87,7 @@ const PropertyList = () => {
 
   const handlePageChange = (newPage: number) => setPage(newPage);
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     setFilters({
       state: "",
       city: "",
@@ -93,7 +107,13 @@ const PropertyList = () => {
       propertyType: "",
     });
     setPage(1);
-  };
+  }, []);
+
+  // Optimized filter change handler
+  const handleFiltersChange = useCallback((updatedFilters: PropertyFilters) => {
+    setFilters(updatedFilters);
+    setPage(1); // Reset to first page when filters change
+  }, []);
 
   const isFavorite = (propertyId: string) =>
     favorites.some((fav) => fav.property._id === propertyId);
@@ -224,19 +244,55 @@ const PropertyList = () => {
         <div className="lg:col-span-1">
           <PropertyFiltersComponent
             filters={filters}
-            onFiltersChange={(updated) =>
-              setFilters((prev) => ({ ...prev, ...updated }))
-            }
+            onFiltersChange={handleFiltersChange}
             onClearFilters={clearFilters}
           />
         </div>
         <div className="lg:col-span-3">
+          {/* Filter loading indicator */}
+          {loading && (
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+              <div className="flex items-center space-x-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                <p className="text-sm text-blue-800">Applying filters...</p>
+              </div>
+            </div>
+          )}
+
           {loading ? (
             <div className="flex justify-center items-center h-64">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading properties...</p>
+              </div>
             </div>
           ) : (
             <>
+              {/* Results counter */}
+              <div className="mb-4 flex justify-between items-center">
+                <p className="text-sm text-gray-600">
+                  {total > 0 ? (
+                    <>
+                      Showing {((page - 1) * PAGE_SIZE) + 1} to {Math.min(page * PAGE_SIZE, total)} of {total} properties
+                    </>
+                  ) : (
+                    'No properties found'
+                  )}
+                </p>
+                {Object.values(debouncedFilters).some(value => 
+                  Array.isArray(value) ? value.length > 0 : value !== ""
+                ) && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={clearFilters}
+                    className="text-xs"
+                  >
+                    Clear all filters
+                  </Button>
+                )}
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {properties.map((property) => (
                   <PropertyCard

@@ -1,4 +1,5 @@
 import React from "react";
+import { getAllStates, getCitiesForState, getTopCities } from "@/lib/locationData";
 
 export interface PropertyFilters {
   state: string;
@@ -25,20 +26,8 @@ interface Props {
   onClearFilters: () => void;
 }
 
-// 28 Indian states
-const STATES = [
-  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh",
-  "Goa", "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka",
-  "Kerala", "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram",
-  "Nagaland", "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu",
-  "Telangana", "Tripura", "Uttar Pradesh", "Uttarakhand", "West Bengal"
-];
-
-// Example city list (expand as needed)
-const CITIES = [
-  "Mumbai", "Delhi", "Bangalore", "Hyderabad", "Ahmedabad", "Chennai", "Kolkata",
-  "Pune", "Jaipur", "Lucknow", "Kanpur", "Nagpur", "Indore", "Thane", "Bhopal"
-];
+// Get available states
+const STATES = getAllStates();
 
 // Amenity options
 const AMENITIES = [
@@ -53,7 +42,12 @@ const FURNISHED_OPTIONS = [
 ];
 
 const PROPERTY_TYPES = [
-  "", "apartment", "house", "condo", "townhouse", "studio", "loft"
+  { value: "", label: "Any" },
+  { value: "penthouse", label: "Penthouse" },
+  { value: "apartment", label: "Apartment" },
+  { value: "studio", label: "Studio" },
+  { value: "bungalow", label: "Bungalow" },
+  { value: "building", label: "Building" }
 ];
 
 const LISTING_TYPES = [
@@ -71,7 +65,7 @@ const VERIFIED_OPTIONS = [
 const BEDROOMS = ["", "1", "2", "3", "4", "5+"];
 const BATHROOMS = ["", "1", "2", "3", "4", "5+"];
 
-const RATINGS = Array.from({ length: 10 }, (_, i) => String(i + 1));
+const RATINGS = Array.from({ length: 5 }, (_, i) => String(i + 1));
 
 const PropertyFiltersComponent: React.FC<Props> = ({
   filters,
@@ -79,7 +73,12 @@ const PropertyFiltersComponent: React.FC<Props> = ({
   onClearFilters
 }) => {
   const update = (key: keyof PropertyFilters, value: any) => {
-    onFiltersChange({ ...filters, [key]: value });
+    // Clear city when state changes
+    if (key === "state") {
+      onFiltersChange({ ...filters, [key]: value, city: "" });
+    } else {
+      onFiltersChange({ ...filters, [key]: value });
+    }
   };
 
   const toggleAmenity = (amenity: string) => {
@@ -89,6 +88,11 @@ const PropertyFiltersComponent: React.FC<Props> = ({
       update("amenities", [...filters.amenities, amenity]);
     }
   };
+
+  // Get cities based on selected state
+  const availableCities = filters.state 
+    ? getCitiesForState(filters.state)
+    : getTopCities();
 
   return (
     <div className="bg-white rounded shadow p-4 space-y-4">
@@ -120,14 +124,16 @@ const PropertyFiltersComponent: React.FC<Props> = ({
 
       {/* City */}
       <div>
-        <label className="block font-medium mb-1">City</label>
+        <label className="block font-medium mb-1">
+          City {filters.state && <span className="text-xs text-gray-500">in {filters.state}</span>}
+        </label>
         <select
           className="w-full border rounded px-2 py-1"
           value={filters.city}
           onChange={e => update("city", e.target.value)}
         >
-          <option value="">All Cities</option>
-          {CITIES.map(city => (
+          <option value="">{filters.state ? `All Cities in ${filters.state}` : "All Cities"}</option>
+          {availableCities.map(city => (
             <option key={city} value={city}>{city}</option>
           ))}
         </select>
@@ -302,24 +308,6 @@ const PropertyFiltersComponent: React.FC<Props> = ({
           {LISTING_TYPES.map(opt => (
             <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
-        </select>
-      </div>
-
-      {/* Property Type */}
-      <div>
-        <label className="block font-medium mb-1">Property Type</label>
-        <select
-          className="w-full border rounded px-2 py-1"
-          value={filters.propertyType}
-          onChange={e => update("propertyType", e.target.value)}
-        >
-          <option value="">Any</option>
-          <option value="apartment">Apartment</option>
-          <option value="house">House</option>
-          <option value="condo">Condo</option>
-          <option value="townhouse">Townhouse</option>
-          <option value="studio">Studio</option>
-          <option value="loft">Loft</option>
         </select>
       </div>
     </div>
