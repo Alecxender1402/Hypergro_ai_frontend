@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import statesAndCities from "./statesAndCities.json"; // Assuming this is a JSON file with states and cities
+import statesAndCities from "./statesAndCities.json"; 
 
 // Set the app element for accessibility
 Modal.setAppElement("#root");

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import statesAndCities from "./statesAndCities.json"; // adjust path as needed
+import statesAndCities from "./statesAndCities.json"; 
 
 // Constants (should match Add modal)
 const PROPERTY_TYPES = ["Villa", "Apartment", "Studio", "Bungalow", "Penthouse"];

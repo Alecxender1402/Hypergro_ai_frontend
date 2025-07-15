@@ -41,7 +41,6 @@ const PropertyCard = ({
 }: PropertyCardProps) => {
   const [isRecommendOpen, setIsRecommendOpen] = useState(false);
 
-  // Handle null property gracefully
   if (!property) {
     return (
       <Card className="w-full max-w-sm">
@@ -151,13 +150,13 @@ const PropertyCard = ({
             </Button>
           )}
           {isOwner && onDelete && (
-   <Button
-    className="w-full bg-black text-white hover:bg-gray-900"
-    onClick={onDelete}
-   >
-    Delete Property
-    </Button>
-  )}
+            <Button
+              className="w-full bg-black text-white hover:bg-gray-900"
+              onClick={onDelete}
+            >
+              Delete Property
+            </Button>
+          )}
 
           {showRemoveButton && onRemoveFavorite && (
             <Button
@@ -167,7 +166,6 @@ const PropertyCard = ({
               Remove from Favorites
             </Button>
           )}
-          {/* Recommend Button */}
           <Button
             className="w-full bg-black text-white hover:bg-gray-900"
             onClick={() => setIsRecommendOpen(true)}
@@ -175,7 +173,6 @@ const PropertyCard = ({
             Recommend
           </Button>
         </div>
-        {/* Recommend Modal */}
         <RecommendPropertyModal
           propertyId={property._id}
           isOpen={isRecommendOpen}
